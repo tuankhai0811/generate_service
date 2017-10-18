@@ -106,45 +106,51 @@ public class Helper {
             case 5:
                 result = "                    ";
                 break;
+            case 6:
+                result = "                        ";
+                break;
+            case 7:
+                result = "                            ";
+                break;
+            case 8:
+                result = "                                ";
+                break;
+            case 9:
+                result = "                                    ";
+                break;
+            case 10:
+                result = "                                        ";
+                break;
+            case 11:
+                result = "                                            ";
+                break;
             default:
                 result = "";
         }
         return result;
     }
 
-    public static String process(String source, String name, int tab) {
-//		System.out.println("\n\n" + tab + "\n");
+    public static String process(String source, String nameClass, int tab, boolean isImp) {
         ArrayList<Model> arrModel = new ArrayList<>();
         ArrayList<String> list = new ArrayList<>();
+        StringBuilder output = new StringBuilder();
+        String imp = "";
         String saveSource = source;
-        if (source.charAt(0) == '[') {
-            int numOpen = 0;
-            int numClose = 0;
-            for (int i = 0; i < source.length() - 1; i++) {
-                if (source.charAt(i) == '{') {
-                    numOpen += 1;
-                }
-                if (source.charAt(i) == '}') {
-                    numClose += 1;
-                }
-                if (source.charAt(i) == '}' && numOpen == numClose && numOpen != 0) {
-                    source = source.substring(3, i);
-//					System.out.println("Yes" + source);
-                    break;
-                }
-//				System.out.println(numOpen + "-" + numClose);
-            }
+        if (nameClass.isEmpty()) {
+            nameClass = "Example";
+        }
+        if (isImp) {
+            imp = " implements Serializable";
         }
 
-        source = source.trim();
-        if (source.startsWith("{")) {
-            source = source.substring(1, source.length() - 1);
-        }
+        // Xử lý chuỗi đầu tiên
         if (tab == 0) {
+            // Bỏ ký tự enter
             source = source.replace((char) 13, ' ');
+            // Bỏ ký tự fetch line
             source = source.replace('\n', ' ');
             source = source.replaceAll("\n", "");
-            source = source.replaceAll("    ", "");
+            source = source.replaceAll("\t", "");
             source = source.replaceAll(" ", "");
             source = source.replaceAll("\\\\\"", "");
 
@@ -160,161 +166,192 @@ public class Helper {
             }
             source = builder.toString();
         }
-//		System.out.println(source);
+//		System.out.println("Chuoi ban dau [" + tab + "]: " + source);
 
-        for (int index = 0; index < source.length(); index++) {
-            int start = index, end;
-            int num = 0;
+        // Kiểm tra chuỗi là array hay object
+        if (source.charAt(1) == '[') {
+            // Nếu là array thì tách object ra
+            int start = 0, end = start;
             int numOpen = 0;
-            int numEnd = 0;
-            boolean isObject = true;
-            for (int k = index; k < source.length(); k++) {
-                if (source.charAt(k) == ':') {
-                    if (source.charAt(k + 2) == '[') {
-                        isObject = false;
+            int numClose = 0;
+            for (int i = 0; i < source.length() - 1; i++) {
+                if (source.charAt(i) == '{') {
+                    numOpen += 1;
+                    if (numOpen == 1) {
+                        start = i - 1;
                     }
-                    // System.out.println(k);
+                }
+                if (source.charAt(i) == '}') {
+                    numClose += 1;
+                }
+                if (numOpen == numClose && numOpen != 0) {
+                    end = i + 1;
                     break;
                 }
             }
-            // if (index<source.length()-1){
-            // if (source.charAt(index+1) == '['){
-            // isObject = false;
-            // }
-            // System.out.println(source.charAt(index+1));
-            // }
-            // System.out.println(isObject+"");
-            for (int i = index; i < source.length(); i++) {
-                if (isObject) {
-                    if (source.charAt(i) == '\"') {
-                        num += 1;
-                    }
+            source = source.substring(start, end);
+//			System.out.println("Chuoi da tach [" + tab + "]: " + source);
+        }
 
-                    if (num % 2 == 0) {
-                        if (source.charAt(i) == ',') {
-                            end = i;
-                            list.add(source.substring(start, end));
-                            index = i;
-                            break;
-                        }
+        // Tách từng model
+        for (int index = 2; index < source.length() - 2; index++) {
+            int start = index, end = start;
+            int numOpen = 0;
+            int numClose = 0;
+            int numSymbol = 0;
+            boolean has = false, isString = true;
+            for (int i = index; i < source.length() - 2; i++) {
+                // Đếm số ký tự \"
+                if (source.charAt(i) == '\"') {
+                    numSymbol += 1;
+                }
+                // Kiểm tra đã đã gặp dấu : chưa
+                if (source.charAt(i) == ':' && numSymbol == 2) {
+                    has = true;
+                    // Kiểm tra value là array, object hay String
+                    if (source.charAt(i + 2) == '{' || source.charAt(i + 2) == '[') {
+                        isString = false;
                     }
-                    // model last
-                    if (source.charAt(i) == '\"' && i == source.length() - 1) {
-                        end = i;
-                        list.add(source.substring(start, end));
-                        index = i;
-                        break;
-                    }
-                } else {
-                    // Is Array
-                    if (source.charAt(i) == '[') {
-                        numOpen += 1;
-                    }
-                    if (source.charAt(i) == ']') {
-                        numEnd += 1;
-                    }
-                    if (source.charAt(i) == '\"') {
-                        if (numOpen == numEnd && numOpen != 0) {
-                            end = i;
-                            list.add(source.substring(start, end + 1));
+                    continue;
+                }
+                // Nếu đã gặp ký tự : thì bắt đầu đếm dấu ngoặc
+                // Nếu chuỗi sau ko phải array hoặc object thì đếm dấu "
+                if (has) {
+                    if (isString) {
+                        // Kết thúc một chuỗi model
+                        if (numSymbol == 4) {
+                            list.add(source.substring(start, i + 1));
                             index = i + 1;
                             break;
                         }
-                    }
-                    // model last
-                    if (source.charAt(i) == '\"' && i == source.length() - 1) {
-                        end = i;
-                        list.add(source.substring(start, end));
-                        index = i;
-                        break;
+                    } else {
+                        if (source.charAt(i) == '{' || source.charAt(i) == '[') {
+                            numOpen += 1;
+                        }
+                        if (source.charAt(i) == '}' || source.charAt(i) == ']') {
+                            numClose += 1;
+                        }
+                        if (numOpen == numClose && numOpen != 0) {
+                            list.add(source.substring(start, i + 2));
+                            // Kiểm tra đã hết model trong object chưa
+                            if (source.charAt(i + 1) == ',') {
+                                // Còn model
+                                index = i + 3;
+                            } else {
+                                // Hết model
+                                index = i + 2;
+                            }
+                            break;
+                        }
                     }
                 }
             }
         }
+        // End tach model
 
-        for (int i = 0; i < list.size(); i++) {
-//			System.out.println(list.get(i));
+        // Xử lý model
+        for (String item : list) {
+            arrModel.add(createModel(item));
         }
 
-        for (int i = 0; i < list.size(); i++) {
-            arrModel.add(createModel(list.get(i)));
-        }
-
-        for (int i = 0; i < arrModel.size(); i++) {
-//			arrModel.get(i).toString();
-        }
-
+        // System.out.println("List string model");
+        // for(String item:list){
+        // System.out.println(item);
+        // }
+//		System.out.println("List model " + tab);
+//		for (Model item : arrModel) {
+//			item.toString();
+//		}
         // Create Class
         StringBuilder resultBuilder = new StringBuilder();
-        resultBuilder.append(getSpace(tab) + "public final class " + convertClassName(name) + " {\n");
+        resultBuilder.append(getSpace(tab) + "public final class " + nameClass + imp + " {\n");
+        // Khai báo biến
         for (int i = 0; i < arrModel.size(); i++) {
             Model model = arrModel.get(i);
             String type;
-            if (model.array) {
+            if (model.isArray) {
                 type = model.getType() + "[]";
             } else {
                 type = model.getType();
             }
-            resultBuilder.append(getSpace(tab) + "    " + "public final " + type + " " + model.getName() + ";\n");
+            resultBuilder.append(getSpace(tab + 1) + "public final " + type + " " + model.getName() + ";\n");
         }
-        resultBuilder.append("\n    " + getSpace(tab) + "@JsonCreator\n");
 
         // Create Contructor
+        resultBuilder.append("\n" + getSpace(tab + 1) + "@JsonCreator\n");
         StringBuilder contructor = new StringBuilder();
-        contructor.append(getSpace(tab) + "    public " + name + "(");
-        for (int i = 0; i < arrModel.size(); i++) {
-            Model model = arrModel.get(i);
+        contructor.append(getSpace(tab + 1) + "public " + nameClass + "(");
+        if (arrModel.size() == 1) {
+            Model model = arrModel.get(0);
             String type;
-            if (model.array) {
+            if (model.isArray) {
                 type = "[]";
             } else {
                 type = "";
             }
-            if (i == arrModel.size() - 1) {
-                contructor.append("\n            " + getSpace(tab) + "@JsonProperty(\"" + model.getKey() + "\") "
-                        + model.getType() + " " + model.getName() + type + ") {\n");
-            } else {
-                contructor.append("\n            " + getSpace(tab) + "@JsonProperty(\"" + model.getKey() + "\") "
-                        + model.getType() + " " + model.getName() + type + ",");
+            contructor.append("@JsonProperty(\"" + model.getKey() + "\") " + model.getType() + " " + model.getName()
+                    + type + ") {\n");
+        } else {
+            for (int i = 0; i < arrModel.size(); i++) {
+                Model model = arrModel.get(i);
+                String type;
+                if (model.isArray) {
+                    type = "[]";
+                } else {
+                    type = "";
+                }
+                if (i == arrModel.size() - 1) {
+                    contructor.append("\n" + getSpace(tab + 3) + "@JsonProperty(\"" + model.getKey() + "\") "
+                            + model.getType() + " " + model.getName() + type + ") {\n");
+                } else {
+                    contructor.append("\n" + getSpace(tab + 3) + "@JsonProperty(\"" + model.getKey() + "\") "
+                            + model.getType() + " " + model.getName() + type + ",");
+                }
             }
         }
         for (int i = 0; i < arrModel.size(); i++) {
             Model model = arrModel.get(i);
-            contructor.append("        " + getSpace(tab) + "this." + model.getName() + " = " + model.getName() + ";\n");
+            contructor.append(getSpace(tab + 2) + "this." + model.getName() + " = " + model.getName() + ";\n");
         }
-        contructor.append(getSpace(tab) + "    }\n");
+        if (arrModel.size() == 0) {
+            contructor.append(getSpace(tab) + ") {\n");
+        }
+        contructor.append(getSpace(tab + 1) + "}\n");
         resultBuilder.append(contructor.toString());
+        // End contructor
 
+        // Create child class
         StringBuilder childClass = new StringBuilder();
-        int newTab = tab + 1;
         for (int i = 0; i < arrModel.size(); i++) {
             Model model = arrModel.get(i);
-            if (!model.typeString) {
+            if (!model.isString) {
                 childClass.append("\n");
-                childClass.append(getSpace(tab) + process(model.getValue(), model.getType(), newTab));
+                childClass.append(getSpace(tab) + process(model.getValue(), model.getType(), tab + 1, isImp));
                 childClass.append("\n");
             }
         }
         resultBuilder.append(childClass.toString());
+        // End child class
 
         // End Class
         resultBuilder.append(getSpace(tab) + "}");
 
 //		System.out.println(resultBuilder.toString());
         return resultBuilder.toString();
-
     }
 
     public static Model createModel(String input) {
         Model model = new Model();
+        // num char \"
         int num = 0;
         for (int i = 0; i < input.length(); i++) {
             if (input.charAt(i) == '\"') {
                 num += 1;
             }
             if (num == 2) {
-                model.setKey(input.substring(1, i - 1));
-                model.setValue(input.substring(i + 2, input.length() - 1));
+                model.setKey(input.substring(1, i));
+                model.setValue(input.substring(i + 2, input.length()));
+                break;
             }
         }
         model.progress();
@@ -323,23 +360,27 @@ public class Helper {
 
     static class Model {
 
-        String key;
-        String value;
-
-        boolean typeString = true;
-        boolean array = false;
+        private String key;
+        private String value;
+        boolean isString = true;
+        boolean isArray = false;
 
         public void progress() {
             if (value.length() < 1) {
                 return;
             }
-            switch (this.value.charAt(0)) {
+            switch (this.value.charAt(1)) {
                 case '{':
-                    typeString = false;
+                    isString = false;
                     break;
                 case '[':
-                    typeString = false;
-                    array = true;
+                    for (char i : value.toCharArray()) {
+                        if (i == '{') {
+                            isString = false;
+                            break;
+                        }
+                    }
+                    isArray = true;
                     break;
             }
         }
@@ -366,7 +407,7 @@ public class Helper {
         }
 
         public String getType() {
-            if (typeString) {
+            if (isString) {
                 return "String";
             }
             StringBuilder result = new StringBuilder();
@@ -376,7 +417,7 @@ public class Helper {
         }
 
         public void setKey(String key) {
-            this.key = key;
+            this.key = key.trim();
         }
 
         public String getValue() {
@@ -384,13 +425,13 @@ public class Helper {
         }
 
         public void setValue(String value) {
-            this.value = value;
+            this.value = value.trim();
         }
 
         public String toString() {
             System.out.println("Key: " + this.key + "\n" + "Value: " + this.value);
-            return "0";
+            System.out.println("Is String: " + isString + " Is Array: " + isArray);
+            return "";
         }
     }
-
 }
