@@ -199,7 +199,7 @@ public class Helper {
             int numOpen = 0;
             int numClose = 0;
             int numSymbol = 0;
-            boolean has = false, isString = true;
+            boolean has = false, isString = true, isNull = false;
             for (int i = index; i < source.length() - 2; i++) {
                 // Đếm số ký tự \"
                 if (source.charAt(i) == '\"') {
@@ -212,6 +212,10 @@ public class Helper {
                     if (source.charAt(i + 2) == '{' || source.charAt(i + 2) == '[') {
                         isString = false;
                     }
+                    // Kiểm tra value có là null hay không
+                    if (source.charAt(i + 1) != '\"') {
+                        isNull = true;
+                    }
                     continue;
                 }
                 // Nếu đã gặp ký tự : thì bắt đầu đếm dấu ngoặc
@@ -219,10 +223,18 @@ public class Helper {
                 if (has) {
                     if (isString) {
                         // Kết thúc một chuỗi model
-                        if (numSymbol == 4) {
-                            list.add(source.substring(start, i + 1));
-                            index = i + 1;
-                            break;
+                        if (isNull) {
+                            if (source.charAt(i) == ',' || source.charAt(i) == '}' || source.charAt(i) == ']') {
+                                list.add(source.substring(start, i));
+                                index = i;
+                                break;
+                            }
+                        } else {
+                            if (numSymbol == 4) {
+                                list.add(source.substring(start, i + 1));
+                                index = i + 1;
+                                break;
+                            }
                         }
                     } else {
                         if (source.charAt(i) == '{' || source.charAt(i) == '[') {
