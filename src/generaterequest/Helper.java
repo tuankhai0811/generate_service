@@ -378,7 +378,7 @@ public class Helper {
         boolean isArray = false;
 
         public void progress() {
-            if (value.length() < 1) {
+            if (value.length() < 3) {
                 return;
             }
             switch (this.value.charAt(1)) {
