@@ -276,7 +276,11 @@ public class Helper {
 //		}
         // Create Class
         StringBuilder resultBuilder = new StringBuilder();
-        resultBuilder.append(getSpace(tab) + "public final class " + nameClass + imp + " {\n");
+        if (tab == 0) {
+            resultBuilder.append(getSpace(tab) + "public final class " + nameClass + imp + " {\n");
+        } else {
+            resultBuilder.append(getSpace(tab) + "public static final class " + nameClass + imp + " {\n");
+        }
         // Khai báo biến
         for (int i = 0; i < arrModel.size(); i++) {
             Model model = arrModel.get(i);
