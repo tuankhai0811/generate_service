@@ -166,7 +166,7 @@ public class Helper {
             }
             source = builder.toString();
         }
-//		System.out.println("Chuoi ban dau [" + tab + "]: " + source);
+        System.out.println("Chuoi ban dau [" + tab + "]: " + source);
 
         // Kiểm tra chuỗi là array hay object
         if (source.charAt(1) == '[') {
@@ -189,8 +189,8 @@ public class Helper {
                     break;
                 }
             }
-            source = source.substring(start, end);
-//			System.out.println("Chuoi da tach [" + tab + "]: " + source);
+            source = source.substring(start, end + 1);
+            System.out.println("Chuoi da tach [" + tab + "]: " + source);
         }
 
         // Tách từng model
@@ -207,6 +207,7 @@ public class Helper {
                 }
                 // Kiểm tra đã đã gặp dấu : chưa
                 if (source.charAt(i) == ':' && numSymbol == 2) {
+                    System.out.println("\ntrue\n");
                     has = true;
                     // Kiểm tra value là array, object hay String
                     if (source.charAt(i + 2) == '{' || source.charAt(i + 2) == '[') {
@@ -224,14 +225,18 @@ public class Helper {
                     if (isString) {
                         // Kết thúc một chuỗi model
                         if (isNull) {
-                            if (source.charAt(i) == ',' || source.charAt(i) == '}' || source.charAt(i) == ']') {
+                            System.out.println(source.charAt(i) + "\n");
+                            if (source.charAt(i) == ',' || source.charAt(i) == '}' || source.charAt(i) == ']'
+                                    || i == source.length() - 3) {
                                 list.add(source.substring(start, i));
+                                System.out.println(source.substring(start, i));
                                 index = i;
                                 break;
                             }
                         } else {
                             if (numSymbol == 4) {
                                 list.add(source.substring(start, i + 1));
+                                System.out.println(source.substring(start, i + 1));
                                 index = i + 1;
                                 break;
                             }
@@ -245,6 +250,7 @@ public class Helper {
                         }
                         if (numOpen == numClose && numOpen != 0) {
                             list.add(source.substring(start, i + 2));
+                            System.out.println(source.substring(start, i + 2));
                             // Kiểm tra đã hết model trong object chưa
                             if (source.charAt(i + 1) == ',') {
                                 // Còn model
@@ -270,10 +276,10 @@ public class Helper {
         // for(String item:list){
         // System.out.println(item);
         // }
-//		System.out.println("List model " + tab);
-//		for (Model item : arrModel) {
-//			item.toString();
-//		}
+        // System.out.println("List model " + tab);
+        // for (Model item : arrModel) {
+        // item.toString();
+        // }
         // Create Class
         StringBuilder resultBuilder = new StringBuilder();
         if (tab == 0) {
@@ -352,7 +358,7 @@ public class Helper {
         // End Class
         resultBuilder.append(getSpace(tab) + "}");
 
-//		System.out.println(resultBuilder.toString());
+        // System.out.println(resultBuilder.toString());
         return resultBuilder.toString();
     }
 
